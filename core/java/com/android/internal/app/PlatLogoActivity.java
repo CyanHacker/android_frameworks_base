@@ -96,7 +96,7 @@ public class PlatLogoActivity extends Activity {
         tv.setGravity(Gravity.CENTER);
         tv.setTransformationMethod(new AllCapsTransformationMethod(this));
         tv.setText("Android " + Build.VERSION.RELEASE);
-        tv.setText((mIsLiquid ? "Liquid Kitkat " : "Android ") + Build.VERSION.RELEASE);
+        tv.setText((mIsLiquid ? "CyanHacker Kitkat " : "Android ") + Build.VERSION.RELEASE);
         tv.setVisibility(View.INVISIBLE);
 
         mContent.addView(bg);
