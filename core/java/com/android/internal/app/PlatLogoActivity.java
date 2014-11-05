@@ -78,7 +78,7 @@ public class PlatLogoActivity extends Activity {
         final TextView letter = new TextView(this);
 
         letter.setTypeface(bold);
-        letter.setTextSize(300);
+        letter.setTextSize(200);
         letter.setTextColor(0xFFFFFFFF);
         letter.setGravity(Gravity.CENTER);
         letter.setText(mIsLiquid ? "CH" : "CH");
