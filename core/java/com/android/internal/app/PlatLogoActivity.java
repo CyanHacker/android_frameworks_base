@@ -81,7 +81,7 @@ public class PlatLogoActivity extends Activity {
         letter.setTextSize(300);
         letter.setTextColor(0xFFFFFFFF);
         letter.setGravity(Gravity.CENTER);
-        letter.setText(mIsLiquid ? "LS" : "LS");
+        letter.setText(mIsLiquid ? "CH" : "CH");
 
         final int p = (int)(4 * metrics.density);
 
