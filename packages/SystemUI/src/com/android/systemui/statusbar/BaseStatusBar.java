@@ -1322,7 +1322,7 @@ public abstract class BaseStatusBar extends SystemUI implements
     }
 
     public boolean inflateViews(NotificationData.Entry entry,
-+            ViewGroup parent, int customTextColor) {
+            ViewGroup parent, int customTextColor) {
         int minHeight =
                 mContext.getResources().getDimensionPixelSize(R.dimen.default_notification_min_height);
         int maxHeight =
@@ -2646,3 +2646,4 @@ public abstract class BaseStatusBar extends SystemUI implements
         }
     }
 }
+
