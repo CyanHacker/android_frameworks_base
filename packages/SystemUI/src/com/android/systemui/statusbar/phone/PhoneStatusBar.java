@@ -636,6 +636,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.TICKER_DISABLED), false, this,
                     UserHandle.USER_ALL);
+			resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_BG_COLOR), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_TEXT_COLOR), false, this,
+                    UserHandle.USER_ALL);		
             update();
         }
 
@@ -856,6 +862,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                         mContext.getContentResolver(),
                         Settings.System.HEADS_UP_TEXT_COLOR, 0,
                         UserHandle.USER_CURRENT);
+			} else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_BG_COLOR))) {
+                rebuildRecentsScreen();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.RECENT_CARD_TEXT_COLOR))) {
+                rebuildRecentsScreen();			
             }
 
             update();
