@@ -32,7 +32,7 @@
   <string name="reboot_bootmenu">Bootmenü</string>
   <string name="reboot_fastboot">Schnellstart</string>
   <string name="reboot_download">Download</string>
-  <string name="reboot_soft">Verkürzter Neustart</string>
+  <string name="reboot_soft">Soft Reboot</string>
   <string name="reboot_progress">Neustarten\u2026</string>
   <string name="reboot_confirm">Telefon wird neugestartet.</string>
   <string name="global_action_reboot">Neustart</string>
