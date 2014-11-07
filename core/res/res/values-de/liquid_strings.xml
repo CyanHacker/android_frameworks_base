@@ -30,11 +30,11 @@
   <string name="reboot_recovery">Recovery</string>
   <string name="reboot_bootloader">Bootloader</string>
   <string name="reboot_bootmenu">Bootmenü</string>
-  <string name="reboot_fastboot">Schnellstart</string>
+  <string name="reboot_fastboot">Fastboot</string>
   <string name="reboot_download">Download</string>
-  <string name="reboot_soft">Soft Reboot</string>
+  <string name="reboot_soft">Softreboot</string>
   <string name="reboot_progress">Neustarten\u2026</string>
-  <string name="reboot_confirm">Telefon wird neugestartet.</string>
+  <string name="reboot_confirm">Telefon wird neugestartet...</string>
   <string name="global_action_reboot">Neustart</string>
   <string name="global_action_choose_profile">Profil</string>
   <string name="notify_turn_wifi_ap_off_title">WLAN ausschalten</string>
@@ -114,6 +114,6 @@
   <string name="permlab_changeHeadsUpState">Heads Up Benachrichtigungen ein-/ausschalten</string>
   <string name="permdesc_changeHeadsUpState">Ermöglicht einer App festzulegen, ob andere Apps Heads Up Benachrichtigungen zeigen dürfen.</string>
   <string name="usb_storage_notification_manage_message">Zum Verwalten antippen</string>
-  <string name="theme_install_error_title">Beim Installieren des Theme ist ein Fehler aufgetreten</string>
   <string name="theme_install_error_message">%s konnte nicht installiert werden</string>
+  <string name="theme_install_error_title">Theme Installation fehlgeschlagen</string>
 </resources>
