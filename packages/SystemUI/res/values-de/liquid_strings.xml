@@ -37,7 +37,7 @@
   <string name="shortcut_shakeevent">Schüttel-Events</string>
   <string name="shortcut_torch">Taschenlampe</string>
   <string name="shortcut_reboot">Neustart</string>
-  <string name="shortcut_recovery">Wiederherstellung</string>
+  <string name="shortcut_recovery">Recovery</string>
   <string name="shortcut_last_app">Letzte App</string>
   <string name="shortcut_screenshot">Screenshot</string>
   <string name="shortcut_volume">Lautstärke</string>
