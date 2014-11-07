@@ -45,7 +45,6 @@ import android.widget.ImageView;
 import com.android.internal.R;
 
 import com.android.systemui.BatteryMeterView;
-import com.android.internal.util.omni.ColorUtils;
 
 /***
  * Note about CircleBattery Implementation:
@@ -95,7 +94,8 @@ public class BatteryCircleMeterView extends ImageView {
     private int mCircleTextChargingColor;
     private int mCircleAnimSpeed;
 
-    private int mCurrentColor = -3;
+    private boolean mCustomColor;
+    private int systemColor;
 
     // runnable to invalidate view via mHandler.postDelayed() call
     private final Runnable mInvalidate = new Runnable() {
@@ -226,10 +226,8 @@ public class BatteryCircleMeterView extends ImageView {
             mBatteryStyle == BatteryMeterView.BATTERY_STYLE_DOTTED_CIRCLE) {
             // change usePaint from solid to dashed
             usePaint.setPathEffect(mPathEffect);
-            mPaintGray.setPathEffect(mPathEffect);
         } else {
             usePaint.setPathEffect(null);
-            mPaintGray.setPathEffect(null);
         }
 
         // pad circle percentage to 100% once it reaches 97%
@@ -260,10 +258,15 @@ public class BatteryCircleMeterView extends ImageView {
             } else if (mIsCharging && (level > 89)) {
                 mPaintFont.setColor(Color.GREEN);
             } else {
-                mPaintFont.setColor(mCircleTextColor);
+                if (mCustomColor) {
+                        mPaintFont.setColor(systemColor);
+                } else {
+                        mPaintFont.setColor(mCircleTextColor);
+                }
             }
             canvas.drawText(Integer.toString(level), textX, mTextY, mPaintFont);
         }
+
     }
 
     @Override
@@ -280,13 +283,6 @@ public class BatteryCircleMeterView extends ImageView {
             drawCircle(canvas, mLevel, (mIsCharging ? mAnimOffset : 0), mTextRightX, mRectRight);
         } else {
             drawCircle(canvas, mLevel, (mIsCharging ? mAnimOffset : 0), mTextLeftX, mRectLeft);
-        }
-    }
-
-    public void updateSettings(int defaultColor) {
-        if (mCurrentColor != defaultColor) {
-            mCurrentColor = defaultColor;
-            updateSettings(mIsQuickSettings);
         }
     }
 
@@ -310,6 +306,10 @@ public class BatteryCircleMeterView extends ImageView {
         mCircleAnimSpeed = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_CIRCLE_BATTERY_ANIMATIONSPEED, 3,
                 UserHandle.USER_CURRENT);
+        mCustomColor = Settings.System.getIntForUser(resolver,
+                Settings.System.CUSTOM_SYSTEM_ICON_COLOR, 0, UserHandle.USER_CURRENT) == 1;
+        systemColor = Settings.System.getIntForUser(resolver,
+                Settings.System.SYSTEM_ICON_COLOR, -2, UserHandle.USER_CURRENT);
 
         int defaultColor = res.getColor(com.android.systemui.R.color.batterymeter_charge_color);
 
@@ -323,20 +323,11 @@ public class BatteryCircleMeterView extends ImageView {
             mCircleColor = defaultColor;
         }
 
-        int nowCircleColor = (mCircleColor ==-2 || mCircleColor == 0xFFFFFFFF) ?
-              (mCurrentColor != -3 ? mCurrentColor : defaultColor) : mCircleColor;
-        int nowTextColor = (mCircleTextColor ==-2 || mCircleTextColor == 0xFFFFFFFF) ?
-              (mCurrentColor != -3 ? mCurrentColor : defaultColor) : mCircleTextColor;
-        int nowCircleTextChargingColor = (mCircleTextChargingColor ==-2 || mCircleTextChargingColor == 0xFFFFFFFF) ?
-              (mCurrentColor != -3 ? mCurrentColor : defaultColor) : mCircleTextChargingColor;
-
-      //FixedEM
-      mCircleTextColor = nowTextColor;
-      mCircleTextChargingColor = nowCircleTextChargingColor;
-      mCircleColor = nowCircleColor;
-
-      mPaintSystem.setColor(mCircleColor);
-      mPaintGray.setColor(ColorUtils.changeColorTransparency(mCircleColor, 75));
+        if (mCustomColor) {
+           mPaintSystem.setColor(systemColor);
+        } else {
+           mPaintSystem.setColor(mCircleColor);
+        }
 
         mRectLeft = null;
         mCircleSize = 0;
@@ -451,4 +442,5 @@ public class BatteryCircleMeterView extends ImageView {
 
         mCircleSize = measure.getHeight();
     }
+
 }

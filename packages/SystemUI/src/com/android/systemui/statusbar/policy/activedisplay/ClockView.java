@@ -83,7 +83,6 @@ public class ClockView extends RelativeLayout {
             final ClockView clock = mClock.get();
             if (clock != null) {
                 clock.mHandler.post(new Runnable() {
-                    @Override
                     public void run() {
                         if (timezoneChanged) {
                             clock.mCalendar = Calendar.getInstance();

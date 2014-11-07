@@ -722,13 +722,6 @@ public class ActionBarView extends AbsActionBarView {
     /**
      * @hide
      */
-    public Drawable getBackgroundActionBar() {
-        return mUpGoerFive.getBackground();
-    }
-
-    /**
-     * @hide
-     */
     public TextView getTitleViewActionBar() {
         return mTitleView;
     }

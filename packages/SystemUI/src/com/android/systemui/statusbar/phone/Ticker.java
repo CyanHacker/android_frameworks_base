@@ -47,7 +47,6 @@ public abstract class Ticker {
     private ImageSwitcher mIconSwitcher;
     private TextSwitcher mTextSwitcher;
     private float mIconScale;
-    private PhoneStatusBar mStatusBar;
     private TickerCallback mEvent;
 
     public interface TickerCallback {
@@ -198,12 +197,6 @@ public abstract class Ticker {
         mPaint = text.getPaint();
     }
 
-    public void setStatusBar(PhoneStatusBar phoneStatusBar) {
-        mStatusBar = phoneStatusBar;
-        mStatusBar.setColorToAllTextSwitcherChildren(mTextSwitcher);
-        mStatusBar.setColorToAllImageSwitcherChildren(mIconSwitcher);
-        mStatusBar.updateNotificationIconColor();
-    }
 
     public void addEntry(StatusBarNotification n) {
         int initialCount = mSegments.size();
@@ -259,9 +252,6 @@ public abstract class Ticker {
             tickerStarting();
             scheduleAdvance();
         }
-        mStatusBar.setColorToAllTextSwitcherChildren(mTextSwitcher);
-        mStatusBar.setColorToAllImageSwitcherChildren(mIconSwitcher);
-        mStatusBar.updateNotificationIconColor();
     }
 
     private static boolean charSequencesEqual(CharSequence a, CharSequence b) {
@@ -302,7 +292,6 @@ public abstract class Ticker {
     }
 
     private Runnable mAdvanceTicker = new Runnable() {
-        @Override
         public void run() {
             while (mSegments.size() > 0) {
                 Segment seg = mSegments.get(0);
@@ -318,9 +307,7 @@ public abstract class Ticker {
                     mSegments.remove(0);
                     continue;
                 }
-                if (mTextSwitcher != null) {
-                    mTextSwitcher.setText(text);
-                }
+                mTextSwitcher.setText(text);
 
                 scheduleAdvance();
                 break;

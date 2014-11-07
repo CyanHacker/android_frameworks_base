@@ -41,6 +41,7 @@ import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
@@ -54,13 +55,13 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.StrictMode;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.method.TextKeyListener;
 import android.util.AttributeSet;
 import android.util.EventLog;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.PrintWriterPrinter;
 import android.util.TypedValue;
@@ -70,6 +71,7 @@ import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.ContextThemeWrapper;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.IWindowManager;
 import android.view.KeyEvent;
@@ -680,7 +682,6 @@ public class Activity extends ContextThemeWrapper
         Dialog mDialog;
         Bundle mArgs;
     }
-
     private SparseArray<ManagedDialog> mManagedDialogs;
 
     // set by the thread after the constructor and before onCreate(Bundle savedInstanceState) is called.
@@ -729,6 +730,7 @@ public class Activity extends ContextThemeWrapper
     /*package*/ boolean mVisibleFromServer = false;
     /*package*/ boolean mVisibleFromClient = true;
     /*package*/ ActionBarImpl mActionBar = null;
+    private boolean mActionBarShowHideAnimationEnabled;
     private boolean mEnableDefaultActionBarUp;
 
     private CharSequence mTitle;
@@ -887,7 +889,7 @@ public class Activity extends ContextThemeWrapper
         mLoaderManager = getLoaderManager("(root)", mLoadersStarted, true);
         return mLoaderManager;
     }
-
+    
     LoaderManagerImpl getLoaderManager(String who, boolean started, boolean create) {
         if (mAllLoaderManagers == null) {
             mAllLoaderManagers = new ArrayMap<String, LoaderManagerImpl>();
@@ -964,6 +966,7 @@ public class Activity extends ContextThemeWrapper
         getApplication().dispatchActivityCreated(this, savedInstanceState);
         mCalled = true;
         mPreviousOrientation = getResources().getConfiguration().orientation;
+        sendAppLaunchBroadcast();
         mScaleGestureDetector = new ScaleGestureDetector(getApplicationContext(), mScaleGestureListener);
         mScaleGestureDetector.setQuickScaleEnabled(false);
     }
@@ -1168,7 +1171,6 @@ public class Activity extends ContextThemeWrapper
         }
 
         if (!mWindow.mIsFloatingWindow) {
-            reloadAppColor(reload);
             return;
         }
 
@@ -1180,10 +1182,8 @@ public class Activity extends ContextThemeWrapper
         if (decorFloatingView == null) {
             return;
         }
-
         if (!reload) {
             decorFloatingView.setFitsSystemWindows(true);
-            decorFloatingView.hackTurnOffWindowResizeAnim(true);
             mFloatingWindowView = new FloatingWindowView(this, getActionBarHeight(true));
             decorFloatingView.addView(mFloatingWindowView, -1, FloatingWindowView.getParams());
             decorFloatingView.setTagInternal(android.R.id.extractArea, mFloatingWindowView);
@@ -1191,37 +1191,11 @@ public class Activity extends ContextThemeWrapper
             mFloatingWindowView = (FloatingWindowView) decorFloatingView.getTag(android.R.id.extractArea);
             decorFloatingView.bringChildToFront(mFloatingWindowView);
         }
-        reloadAppColor(reload);
-    }
-
-    private void reloadAppColor(boolean reload) {
-        if (getAppColorEnabled()) {
-            if (mActionBar != null) {
-                if (reload && mActionBar.isShowing()) {
-                    mActionBar.changeColorFromActionBar(null);
-                }
-            } else {
-                if (reload) {
-                    sendActionColorBroadcast(-3, -3);
-                }
+        if (mActionBar != null) {
+            mActionBar.setFloatingWindowBar(mFloatingWindowView);
+            if (reload && mActionBar.isShowing()) {
+                mActionBar.changeColorFromActionBar();
             }
-        }
-    }
-
-    private boolean getAppColorEnabled() {
-        int enabled = Settings.System.getIntForUser(
-                    getContentResolver(), Settings.System.STATUS_BAR_TINTED_COLOR, 0
-                    , UserHandle.USER_CURRENT_OR_SELF);
-        return (enabled != 0);
-    }
-
-    /**
-     * @hide
-     */
-    public void changeFloatingWindowColor(int bg_color, int ic_color) {
-        if (mFloatingWindowView != null) {
-            mFloatingWindowView.setFloatingBackgroundColor(bg_color);
-            mFloatingWindowView.setFloatingColorFilter(ic_color);
         }
     }
 
@@ -1271,6 +1245,7 @@ public class Activity extends ContextThemeWrapper
      */
     protected void onResume() {
         if (DEBUG_LIFECYCLE) Slog.v(TAG, "onResume " + this);
+        setupFloatingActionBar(true);
         getApplication().dispatchActivityResumed(this);
         mCalled = true;
     }
@@ -1290,8 +1265,8 @@ public class Activity extends ContextThemeWrapper
     protected void onPostResume() {
         final Window win = getWindow();
         if (win != null) win.makeActive();
-        if (mActionBar != null) mActionBar.setShowHideAnimationEnabled(true);
-        setupFloatingActionBar(true);
+        mActionBarShowHideAnimationEnabled = true;
+        updateActionBarShowHideAnimation();
         mCalled = true;
     }
 
@@ -1512,16 +1487,16 @@ public class Activity extends ContextThemeWrapper
      * imagery for the desired thumbnail in the dimensions of that bitmap.  It
      * can use the given <var>canvas</var>, which is configured to draw into the
      * bitmap, for rendering if desired.
-     * 
+     *
      * <p>The default implementation returns fails and does not draw a thumbnail;
      * this will result in the platform creating its own thumbnail if needed.
-     * 
+     *
      * @param outBitmap The bitmap to contain the thumbnail.
      * @param canvas Can be used to render into the bitmap.
-     * 
+     *
      * @return Return true if you have drawn into the bitmap; otherwise after
      *         you return it will be filled with a default thumbnail.
-     * 
+     *
      * @see #onCreateDescription
      * @see #onSaveInstanceState
      * @see #onPause
@@ -1534,15 +1509,15 @@ public class Activity extends ContextThemeWrapper
      * Generate a new description for this activity.  This method is called
      * before pausing the activity and can, if desired, return some textual
      * description of its current state to be displayed to the user.
-     * 
+     *
      * <p>The default implementation returns null, which will cause you to
      * inherit the description from the previous activity.  If all activities
      * return null, generally the label of the top activity will be used as the
      * description.
-     * 
+     *
      * @return A description of what the user is doing.  It should be short and
      *         sweet (only a few words).
-     * 
+     *
      * @see #onCreateThumbnail
      * @see #onSaveInstanceState
      * @see #onPause
@@ -1585,7 +1560,8 @@ public class Activity extends ContextThemeWrapper
      */
     protected void onStop() {
         if (DEBUG_LIFECYCLE) Slog.v(TAG, "onStop " + this);
-        if (mActionBar != null) mActionBar.setShowHideAnimationEnabled(false);
+        mActionBarShowHideAnimationEnabled = false;
+        updateActionBarShowHideAnimation();
         getApplication().dispatchActivityStopped(this);
         mTranslucentCallback = null;
         mCalled = true;
@@ -1687,11 +1663,11 @@ public class Activity extends ContextThemeWrapper
      * by that attribute, then instead of reporting it the system will stop
      * and restart the activity (to have it launched with the new
      * configuration).
-     *
+     * 
      * <p>At the time that this function has been called, your Resources
      * object will have been updated to return resource values matching the
      * new configuration.
-     *
+     * 
      * @param newConfig The new device configuration.
      */
     public void onConfigurationChanged(Configuration newConfig) {
@@ -1707,43 +1683,13 @@ public class Activity extends ContextThemeWrapper
                 refreshAppLayoutSize();
                 Configuration config = getResources().getConfiguration();
                 if (config.orientation != mPreviousOrientation) {
-                    mWindow.setGravity(Gravity.LEFT | Gravity.TOP);
-                    if (!isUnSnap()) {
-                        requestChangingFlagsLayout();
-                    }
                     WindowManager.LayoutParams params = mWindow.getAttributes();
-                    switch (mSnap) {
-                        case SNAP_LEFT:
-                             params.width = (mCurrentScreenWidth / 2);
-                             params.height = ViewGroup.LayoutParams.MATCH_PARENT;
-	                     params.x = 0;
-	                     params.y = 0;
-                             break;
-                        case SNAP_RIGHT:
-                             params.width = (mCurrentScreenWidth / 2);
-                             params.height = ViewGroup.LayoutParams.MATCH_PARENT;
-	                     params.x = (mCurrentScreenWidth / 2);
-	                     params.y = 0;
-                             break;
-                        case SNAP_TOP:
-                             params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                             params.height = (mCurrentScreenHeight / 2);
-	                     params.x = 0;
-	                     params.y = 0;
-                             break;
-                        case SNAP_BOTTOM:
-                             params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                             params.height = (mCurrentScreenHeight / 2);
-	                     params.x = 0;
-	                     params.y = (mCurrentScreenHeight / 2);
-                             break;
-                        case SNAP_NONE:
-                             int width = params.width;
-                             int height = params.height;
-                             params.width = height;
-                             params.height = width;
-                             break;
-                    }
+                    final int old_x = params.x;
+                    final int old_y = params.y;
+                    params.x = old_y;
+                    params.y = old_x;
+                    params.width = mAppFloatViewWidth;
+                    params.height = mAppFloatViewHeight;
                     mWindow.setAttributes(params);
                     mPreviousOrientation = config.orientation;
                 }
@@ -2128,7 +2074,7 @@ public class Activity extends ContextThemeWrapper
     public View findViewById(int id) {
         return getWindow().findViewById(id);
     }
-
+    
     /**
      * Retrieve a reference to this activity's ActionBar.
      *
@@ -2138,7 +2084,7 @@ public class Activity extends ContextThemeWrapper
         initActionBar();
         return mActionBar;
     }
-
+    
     /**
      * Creates a new ActionBar, locates the inflated ActionBarView,
      * initializes the ActionBar with the view, and sets mActionBar.
@@ -2159,6 +2105,13 @@ public class Activity extends ContextThemeWrapper
 
         mWindow.setDefaultIcon(mActivityInfo.getIconResource());
         mWindow.setDefaultLogo(mActivityInfo.getLogoResource());
+        updateActionBarShowHideAnimation();
+    }
+
+    private void updateActionBarShowHideAnimation() {
+        if (mActionBar != null) {
+            mActionBar.setShowHideAnimationEnabled(mActionBarShowHideAnimationEnabled);
+        }
     }
 
     /**
@@ -2230,7 +2183,7 @@ public class Activity extends ContextThemeWrapper
     public void setFinishOnTouchOutside(boolean finish) {
         mWindow.setCloseOnTouchOutside(finish);
     }
-
+    
     /**
      * Use with {@link #setDefaultKeyMode} to turn off default handling of
      * keys.
@@ -2685,6 +2638,9 @@ public class Activity extends ContextThemeWrapper
         return onKeyShortcut(event.getKeyCode(), event);
     }
 
+    boolean scaleW, scaleH, move;
+    Point lastPos;
+
     /**
      * Called to process touch screen events.  You can override this to
      * intercept all touch screen events before they are dispatched to the
@@ -2819,16 +2775,12 @@ public class Activity extends ContextThemeWrapper
         mWindow.setGravity(Gravity.LEFT | Gravity.TOP);
         if (!mChangedFlags) {
             mChangedFlags = true;
-            requestChangingFlagsLayout();
-        }
-    }
-
-    private void requestChangingFlagsLayout() {
-        mWindow.setCloseOnTouchOutside(false);
-        mWindow.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-        mWindow.addFlags(WindowManager.LayoutParams.FLAG_SPLIT_TOUCH);
-        if (ActivityManager.isHighEndGfx()) {
-            mWindow.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+            mWindow.setCloseOnTouchOutside(false);
+            mWindow.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+            mWindow.addFlags(WindowManager.LayoutParams.FLAG_SPLIT_TOUCH);
+            if (ActivityManager.isHighEndGfx()) {
+                mWindow.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+            }
         }
     }
 
@@ -3110,31 +3062,12 @@ public class Activity extends ContextThemeWrapper
         }
     }
 
-    /**
-     * @hide
-     */
-    public void sendActionColorBroadcast(int st_color, int ic_color) {
-        final IWindowManager wm = (IWindowManager) WindowManagerGlobal.getWindowManagerService();
-
-        try {
-             wm.sendActionColorBroadcast(st_color, ic_color);
-             wm.sendAppColorBroadcast(300);
-        } catch (RemoteException e) {
-            Log.e(TAG, "Could not perform get action bar color", e);
-        }
-    }
-
-    /**
-     * @hide
-     */
-    public void sendAppLaunchBroadcast() {
+    private void sendAppLaunchBroadcast() {
         Intent appIntent = new Intent(Intent.ACTION_ACTIVITY_LAUNCH_DETECTOR);
         appIntent.putExtra("packagename", getPackageName());
-        appIntent.putExtra("packagetoken", mToken);
         appIntent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY | Intent.FLAG_RECEIVER_FOREGROUND);
-        sendBroadcastAsUser(appIntent, UserHandle.CURRENT_OR_SELF);
-        moveTaskToBack(true);
+        sendBroadcast(appIntent);
     }
 
     private void sendAppEndBroadcast() {
@@ -3142,7 +3075,7 @@ public class Activity extends ContextThemeWrapper
         endIntent.putExtra("packagename", getPackageName());
         endIntent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY | Intent.FLAG_RECEIVER_FOREGROUND);
-        sendBroadcastAsUser(endIntent, UserHandle.CURRENT_OR_SELF);
+        sendBroadcast(endIntent);
     }
 
     private void setProgressLayoutApp() {
@@ -3430,7 +3363,7 @@ public class Activity extends ContextThemeWrapper
                 mFragments.dispatchOptionsMenuClosed(menu);
                 onOptionsMenuClosed(menu);
                 break;
-
+                
             case Window.FEATURE_CONTEXT_MENU:
                 onContextMenuClosed(menu);
                 break;
@@ -3660,7 +3593,7 @@ public class Activity extends ContextThemeWrapper
     public void openOptionsMenu() {
         mWindow.openPanel(Window.FEATURE_OPTIONS_PANEL, null);
     }
-
+    
     /**
      * Progammatically closes the options menu. If the options menu is already
      * closed, this method does nothing.
@@ -5013,7 +4946,12 @@ public class Activity extends ContextThemeWrapper
         }
     }
 
+    /**
+     * Hide from public api
+     * @hide
+     */
     public void finishFloating() {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         mMainThread.performFinishFloating();
     }
 
@@ -5956,7 +5894,7 @@ public class Activity extends ContextThemeWrapper
     }
 
     // ------------------ Internal API ------------------
-
+    
     final void setParent(Activity parent) {
         mParent = parent;
     }
@@ -5978,7 +5916,7 @@ public class Activity extends ContextThemeWrapper
         attachBaseContext(context);
 
         mFragments.attachActivity(this, mContainer, null);
-
+        
         if (makeNewWindow(context, intent, info)) {
             parent = null;
         }
@@ -5992,7 +5930,7 @@ public class Activity extends ContextThemeWrapper
             mWindow.setUiOptions(info.uiOptions);
         }
         mUiThread = Thread.currentThread();
-
+        
         mMainThread = aThread;
         mInstrumentation = instr;
         mToken = token;
@@ -6019,7 +5957,8 @@ public class Activity extends ContextThemeWrapper
 
     private boolean makeNewWindow(Context context, Intent intent, ActivityInfo info) {
         boolean floating = (intent.getFlags() & Intent.FLAG_FLOATING_WINDOW) == Intent.FLAG_FLOATING_WINDOW;
-        if (intent != null && floating) {
+        boolean history = (intent.getFlags() & Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY;
+        if (intent != null && floating && !history) {
 
             TypedArray styleArray = context.obtainStyledAttributes(info.theme, com.android.internal.R.styleable.Window);
             TypedValue backgroundValue = styleArray.peekValue(com.android.internal.R.styleable.Window_windowBackground);
@@ -6045,15 +5984,12 @@ public class Activity extends ContextThemeWrapper
                 scaleFloatingWindow();
             }
 
+            mWindow.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND,
+                    WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             WindowManager.LayoutParams params = mWindow.getAttributes();
-            params.privateFlags |= WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
-            if (android.os.Process.myUid() == android.os.Process.SYSTEM_UID) {
-                mWindow.setFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND,
-                        WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-                params.alpha = 1f;
-                params.dimAmount = 0.25f;
-            }
-            mWindow.setAttributes(params);
+            params.alpha = 1f;
+            params.dimAmount = 0.5f;
+            mWindow.setAttributes((WindowManager.LayoutParams) params);
 
             refreshAppLayoutSize();
             return true;
@@ -6200,7 +6136,7 @@ public class Activity extends ContextThemeWrapper
         onUserInteraction();
         onUserLeaveHint();
     }
-
+    
     final void performStop() {
         mDoReportFullyDrawn = false;
         if (mLoadersStarted) {
@@ -6247,6 +6183,14 @@ public class Activity extends ContextThemeWrapper
             mStopped = true;
         }
         mResumed = false;
+
+        // Floatingwindows activities should be kept volatile to prevent new activities taking
+        // up front in a minimized space. Every stop call, for instance when pressing home,
+        // will terminate the activity. If the activity is already finishing we might just
+        // as well let it go.
+        if (!mChangingConfigurations && mWindow != null && mWindow.mIsFloatingWindow && !isFinishing()) {
+            finish();
+        }
     }
 
     final void performDestroy() {

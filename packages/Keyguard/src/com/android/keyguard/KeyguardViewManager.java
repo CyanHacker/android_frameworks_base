@@ -78,7 +78,6 @@ import android.widget.FrameLayout;
 import com.android.internal.util.liquid.TorchConstants;
 import com.android.internal.policy.IKeyguardShowCallback;
 import com.android.internal.widget.LockPatternUtils;
-import com.android.internal.util.omni.ColorUtils;
 
 import java.io.File;
 
