@@ -21,7 +21,6 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.Resources;
-import android.telephony.MSimTelephonyManager;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Handler;

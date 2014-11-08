@@ -204,7 +204,7 @@ public class BatteryCircleMeterView extends ImageView {
                     final int iconColor) {
                 mOverrideIconColor = iconColor;
 
-                if (mQS || mOverrideIconColor == 0) {
+                if (mOverrideIconColor == 0) {
                     mPaintSystem.setColor(mCircleColor);
                     mHandler.removeCallbacks(mInvalidate);
                     mHandler.postDelayed(mInvalidate, 50);
@@ -310,7 +310,7 @@ public class BatteryCircleMeterView extends ImageView {
                 } else {
                         mPaintFont.setColor(mCircleTextColor);
                 }
-            } if (mOverrideIconColor == 0 || mQS) {
+            } if (mOverrideIconColor == 0) {
                 if (mIsCharging) {
                     mPaintFont.setColor(mCircleTextChargingColor);
                 } else {
@@ -322,28 +322,6 @@ public class BatteryCircleMeterView extends ImageView {
             canvas.drawText(Integer.toString(level), textX, mTextY, mPaintFont);
         }
 
-    }
-
-    public void setColors(boolean qs) {
-        mQS = qs;
-        Resources res = getResources();
-        int fgColor = res.getColor(qs ? com.android.systemui.R.color.qs_batterymeter_circle_fg :
-                com.android.systemui.R.color.sb_batterymeter_circle_fg);
-        int bgColor = res.getColor(qs ? com.android.systemui.R.color.qs_batterymeter_circle_bg :
-                com.android.systemui.R.color.sb_batterymeter_circle_bg);
-        int textColor = res.getColor(qs ? com.android.systemui.R.color.qs_batterymeter_circle_text :
-                com.android.systemui.R.color.sb_batterymeter_circle_text);
-        int chargingTextColor = res.getColor(qs ? com.android.systemui.R.color.qs_batterymeter_circle_text_charging :
-                com.android.systemui.R.color.sb_batterymeter_circle_text_charging);
-        mCircleTextColor = textColor;
-        mCircleTextChargingColor = chargingTextColor;
-        mCircleColor = fgColor;
-
-        mPaintSystem.setColor(mOverrideIconColor == 0 || qs ? mCircleColor : mOverrideIconColor);
-        // could not find the darker definition anywhere in resources
-        // do not want to use static 0x404040 color value. would break theming.
-        mPaintGray.setColor(bgColor);
-        mPaintRed.setColor(res.getColor(R.color.holo_red_light));
     }
 
     @Override

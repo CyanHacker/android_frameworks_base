@@ -304,36 +304,6 @@ public class BatteryMeterView extends View implements DemoMode {
         });
         return colorFader;
     }
-
-
-    public void setColors(boolean qs) {
-        mQS = qs;
-
-        Resources res = getResources();
-        TypedArray levels = res.obtainTypedArray(R.array.batterymeter_color_levels);
-        TypedArray colors = res.obtainTypedArray(qs ? R.array.qs_batterymeter_color_values :
-                                                      R.array.sb_batterymeter_color_values);
-
-        final int N = levels.length();
-        mColors = new int[2*N];
-        for (int i=0; i<N; i++) {
-            mColors[2*i] = levels.getInt(i, 0);
-            mColors[2*i+1] = colors.getColor(i, 0);
-        }
-        levels.recycle();
-        colors.recycle();
-        mWarningTextPaint.setColor(mColors[1]);
-        if (qs) {
-            mChargeColor = res.getColor(R.color.qs_batterymeter_charge_color);
-            mBoltPaint.setColor(res.getColor(R.color.qs_batterymeter_bolt_color));
-            mFramePaint.setColor(res.getColor(R.color.qs_batterymeter_frame_color));
-        } else {
-            mChargeColor = res.getColor(R.color.sb_batterymeter_charge_color);
-            mBoltPaint.setColor(res.getColor(R.color.sb_batterymeter_bolt_color));
-            mFramePaint.setColor(res.getColor(R.color.sb_batterymeter_frame_color));
-        }
-    }
-
     private static float[] loadBoltPoints(Resources res) {
         final int[] pts = res.getIntArray(R.array.batterymeter_bolt_points);
         int maxX = 0, maxY = 0;
