@@ -170,6 +170,10 @@ public class SignalClusterView extends LinearLayout
         });
     }
 
+	public void setStatusBar(PhoneStatusBar phoneStatusBar) {
+        mStatusBar = phoneStatusBar;
+	}	
+	
     private ObjectAnimator buildAnimator(final ImageView target) {
         final ObjectAnimator animator = ObjectAnimator.ofObject(target, "colorFilter",
                 new ArgbEvaluator(), mPreviousOverrideIconColor, mOverrideIconColor);
