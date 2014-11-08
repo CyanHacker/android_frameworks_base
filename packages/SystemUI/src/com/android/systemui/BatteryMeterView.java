@@ -153,7 +153,6 @@ public class BatteryMeterView extends View implements DemoMode {
 
                 setContentDescription(
                         context.getString(R.string.accessibility_battery_level, level));
-                updateSettings(mIsQuickSettings);
             } else if (action.equals(ACTION_LEVEL_TEST)) {
                 testmode = true;
                 post(new Runnable() {
@@ -273,9 +272,6 @@ public class BatteryMeterView extends View implements DemoMode {
         mBoltPoints = loadBoltPoints(res);
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
-        updateSettings(mIsQuickSettings);
-
-        updateSettings(false);
 
         mDSBDuration = context.getResources().getInteger(R.integer.dsb_transition_duration);
         BarBackgroundUpdater.addListener(new BarBackgroundUpdater.UpdateListener(this) {
@@ -343,20 +339,6 @@ public class BatteryMeterView extends View implements DemoMode {
         return doOverride ? mOverrideIconColor : color;
     }
 
-    public void updateSettings(final boolean qs) {
-        mQS = qs;
-
-        int batteryStyle = Settings.System.getIntForUser(getContext().getContentResolver(),
-                                Settings.System.STATUS_BAR_BATTERY_STYLE, 0,
-                                ActivityManager.getCurrentUser());
-
-        mShowPercent = batteryStyle == 1 || (qs && batteryStyle == 4);
-        boolean show = batteryStyle == 0 || mShowPercent;
-
-        setVisibility(show ? View.VISIBLE : View.GONE);
-        postInvalidate();
-    }
-
     @Override
     public void draw(Canvas c) {
         BatteryTracker tracker = mDemoMode ? mDemoTracker : mTracker;
@@ -406,7 +388,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
         // fill 'er up
         final boolean doOverride = mOverrideIconColor != 0 && !mQS;
-        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor : mChargeColor) :
+        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor) :
             getColorForLevel(level);
         mBatteryPaint.setColor(color);
 
