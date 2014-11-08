@@ -485,8 +485,6 @@ public class BatteryMeterView extends View implements DemoMode {
             }
             mTextPaint.setColor(doOverride ? mOverrideIconColor : 0xFF000000);
 
-            final String str = String.valueOf(SINGLE_DIGIT_PERCENT ? (level/10) : level);
-            final float x = mWidth * 0.5f;
             final float y = (mHeight + mTextHeight) * 0.47f;
             c.drawText(str,
                     x,
