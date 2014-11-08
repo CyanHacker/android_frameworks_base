@@ -324,7 +324,8 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     private AnimatorSet generateButtonColorsAnimatorSet() {
         final ImageView[] buttons = new ImageView[] {
             (ImageView) getRecentsButton(),
-            (ImageView) getMenuButton(),
+            (ImageView) getLeftMenuButton(),
+			(ImageView) getRightMenuButton(),
             (ImageView) getBackButton(),
             (ImageView) getHomeButton(),
             (ImageView) getSearchLight(),
