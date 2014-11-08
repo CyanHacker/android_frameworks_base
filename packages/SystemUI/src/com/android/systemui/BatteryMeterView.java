@@ -96,6 +96,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
     private int mHeight;
     private int mWidth;
+    private int mChargeColor;
     private String mWarningString;
     private final float[] mBoltPoints;
     private final Path mBoltPath = new Path();
@@ -388,7 +389,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
         // fill 'er up
         final boolean doOverride = mOverrideIconColor != 0 && !mQS;
-        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor : ) :
+        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor : mChargeColor) :
             getColorForLevel(level);
         mBatteryPaint.setColor(color);
 
