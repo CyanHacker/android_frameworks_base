@@ -425,7 +425,7 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     }
 
     public View getRightMenuButton() {
-        return mCurrentView == null ? null : mCurrentView.findViewById(R.id.menu_right);
+        return mCurrentView == null ? null : mCurrentView.findViewById(R.id.menu);
     }
 
     public View getLeftIMENavigationButton() {
