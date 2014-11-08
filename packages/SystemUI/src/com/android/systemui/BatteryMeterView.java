@@ -388,7 +388,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
         // fill 'er up
         final boolean doOverride = mOverrideIconColor != 0 && !mQS;
-        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor) :
+        final int color = tracker.plugged ? (doOverride ? mOverrideIconColor : ) :
             getColorForLevel(level);
         mBatteryPaint.setColor(color);
 
